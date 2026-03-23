@@ -43,11 +43,22 @@ cp .env.example .env.local
 
 Edit `.env.local` with your Supabase credentials and API keys:
 ```
+SUPABASE_PROJECT_ID=your-project-id
+SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+SUPABASE_SERVICE_KEY=your-service-key
 NEXT_PUBLIC_API_BASE_URL=https://api.almostcrackd.ai
 NEXT_PUBLIC_API_KEY=your-api-key
 ```
+
+4. Enable Google OAuth in Supabase:
+   - Go to your Supabase project settings
+   - Navigate to Authentication → Providers
+   - Enable Google provider
+   - Add your Google OAuth credentials (from Google Cloud Console)
+   - Add redirect URI: `http://localhost:3000/auth/callback` (for local development)
 
 ### Running the Application
 
@@ -95,11 +106,21 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Authentication
 
-The application requires Supabase authentication with one of these roles:
-- `is_superadmin = TRUE`
-- `is_matrix_admin = TRUE`
+The application uses **Google OAuth (SSO)** for authentication via Supabase.
 
-Admin-only users can access the dashboard to manage humor flavors and steps.
+**Setup Requirements:**
+1. Create a Google OAuth app in [Google Cloud Console](https://console.cloud.google.com)
+2. Add Authorized redirect URIs:
+   - Local: `http://localhost:3000/auth/callback`
+   - Production: `https://your-vercel-domain.vercel.app/auth/callback`
+3. Enable Google provider in your Supabase project
+4. Add your Google OAuth Client ID and Secret to Supabase
+
+**Access Control:**
+- Admin-only access requires one of these roles in the `profiles` table:
+  - `is_superadmin = TRUE`
+  - `is_matrix_admin = TRUE`
+- Non-admins will be automatically signed out after login
 
 ## API Integration
 

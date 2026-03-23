@@ -56,14 +56,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session)
 
         if (session) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
 
-          setUser(data)
-          setIsAdmin(data?.is_superadmin || data?.is_matrix_admin)
+            setUser(data)
+            setIsAdmin(data?.is_superadmin || data?.is_matrix_admin)
+          } catch (error) {
+            console.error('Error fetching profile:', error)
+            setUser(null)
+            setIsAdmin(false)
+          }
         } else {
           setUser(null)
           setIsAdmin(false)
