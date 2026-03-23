@@ -4,7 +4,7 @@ import { apiClient } from './api-client'
 interface HumorStep {
   id: number
   humor_flavor_id: number
-  order: number
+  order_by: number
   step_type_id?: number
   description: string
   created_datetime_utc?: string

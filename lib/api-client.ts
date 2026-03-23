@@ -90,8 +90,8 @@ export class SupabaseClient {
 
       if (error) throw error
       
-      // Sort by order field in application code
-      const sorted = (data || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+      // Sort by order_by field in application code
+      const sorted = (data || []).sort((a, b) => (a.order_by || 0) - (b.order_by || 0))
       return sorted
     } catch (error) {
       console.error('Error fetching humor flavor steps:', error)
@@ -112,15 +112,16 @@ export class SupabaseClient {
 
       if (stepsError) throw stepsError
 
-      // Calculate next order
-      const maxOrder = Math.max(...(steps || []).map(s => s.order || 0), 0)
+      // Calculate next order_by
+      const maxOrder = Math.max(...(steps || []).map(s => s.order_by || 0), 0)
       const nextOrder = maxOrder + 1
 
       const { data: newStep, error } = await supabase
         .from('humor_flavor_steps')
         .insert({
           humor_flavor_id: flavorId,
-          order: nextOrder,
+          order_by: nextOrder,
+          llm_input_type_id: 1,
           description: data.description || data.prompt || '',
           created_by_user_id: userId,
           modified_by_user_id: userId,
@@ -181,10 +182,10 @@ export class SupabaseClient {
       const { data: session } = await supabase.auth.getSession()
       const userId = session?.user?.id
 
-      // Update each step with new order
+      // Update each step with new order_by
       const updates = steps.map((step, index) => ({
         ...step,
-        order: index + 1,
+        order_by: index + 1,
         modified_by_user_id: userId,
         modified_datetime_utc: new Date().toISOString(),
       }))
@@ -219,12 +220,12 @@ export class SupabaseClient {
 
       if (stepsError) throw stepsError
 
-      // Sort steps by order
-      const sortedSteps = (steps || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+      // Sort steps by order_by
+      const sortedSteps = (steps || []).sort((a, b) => (a.order_by || 0) - (b.order_by || 0))
 
       // Prepare the prompt chain from steps
       const promptChain = sortedSteps.map((step: any) => ({
-        order: step.order,
+        order: step.order_by,
         description: step.description,
       }))
 
