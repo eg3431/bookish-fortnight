@@ -72,10 +72,10 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
         description: newStepPrompt,
       })
       setNewStepPrompt('')
-      // Refresh steps from currentFlavor after creation
-      if (currentFlavor?.id === flavorId) {
-        setSteps(currentFlavor.steps || [])
-      }
+      
+      // Fetch the updated flavor to refresh steps
+      await fetchFlavor(flavorId)
+      
       toast.success('Step added')
     } catch (error) {
       console.error('Error adding step:', error)
