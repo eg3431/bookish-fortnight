@@ -25,24 +25,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session with timeout
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // Set a timeout for session check
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        )
+
+        const sessionPromise = supabase.auth.getSession()
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any
+
         setSession(session)
 
         if (session) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
 
-          setUser(data)
-          setIsAdmin(data?.is_superadmin || data?.is_matrix_admin)
+            setUser(data)
+            setIsAdmin(data?.is_superadmin || data?.is_matrix_admin)
+          } catch (profileError) {
+            console.warn('Could not fetch profile:', profileError)
+            setUser(null)
+            setIsAdmin(false)
+          }
         }
       } catch (error) {
         console.error('Error getting session:', error)
+        setSession(null)
+        setUser(null)
+        setIsAdmin(false)
       } finally {
         setIsLoading(false)
       }
