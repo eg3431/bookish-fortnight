@@ -12,42 +12,73 @@ interface FlavorEditorProps {
 }
 
 export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
-  const { currentFlavor, setCurrentFlavor, createFlavor, updateFlavor, createStep, deleteStep, reorderSteps } = useHumorFlavorStore()
+  const { currentFlavor, flavors, fetchFlavor, createFlavor, updateFlavor, createStep, deleteStep, reorderSteps } = useHumorFlavorStore()
   
-  const [name, setName] = useState('')
+  const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
   const [steps, setSteps] = useState<any[]>([])
   const [newStepPrompt, setNewStepPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    if (flavorId) {
+      // If we have currentFlavor and it matches, use it
+      if (currentFlavor?.id === flavorId) {
+        setSlug(currentFlavor.slug)
+        setDescription(currentFlavor.description || '')
+        setSteps(currentFlavor.steps || [])
+      } else {
+        // Try to find in flavors list
+        const flavor = flavors.find(f => f.id === flavorId)
+        if (flavor) {
+          setSlug(flavor.slug)
+          setDescription(flavor.description || '')
+          setSteps(flavor.steps || [])
+        } else {
+          // Fetch the flavor if not in list
+          fetchFlavor(flavorId)
+        }
+      }
+    } else {
+      // Creating new flavor - reset form
+      setSlug('')
+      setDescription('')
+      setSteps([])
+    }
+    setNewStepPrompt('')
+  }, [flavorId, currentFlavor, flavors, fetchFlavor])
+
+  // Sync steps when currentFlavor changes
+  useEffect(() => {
     if (flavorId && currentFlavor?.id === flavorId) {
-      setName(currentFlavor.name)
-      setDescription(currentFlavor.description)
       setSteps(currentFlavor.steps || [])
     }
-  }, [flavorId, currentFlavor])
+  }, [currentFlavor?.steps, flavorId])
 
   const handleAddStep = async () => {
     if (!newStepPrompt.trim()) {
-      toast.error('Step prompt cannot be empty')
+      toast.error('Step description cannot be empty')
+      return
+    }
+
+    if (!flavorId) {
+      toast.error('Save the flavor first before adding steps')
       return
     }
 
     try {
       setIsLoading(true)
-      const stepNumber = steps.length + 1
-      
-      if (flavorId && currentFlavor) {
-        await createStep(flavorId, {
-          prompt: newStepPrompt,
-          stepNumber,
-          description: `Step ${stepNumber}`
-        })
-        setNewStepPrompt('')
-        toast.success('Step added')
+      await createStep(flavorId, {
+        description: newStepPrompt,
+      })
+      setNewStepPrompt('')
+      // Refresh steps from currentFlavor after creation
+      if (currentFlavor?.id === flavorId) {
+        setSteps(currentFlavor.steps || [])
       }
+      toast.success('Step added')
     } catch (error) {
+      console.error('Error adding step:', error)
       toast.error('Failed to add step')
     } finally {
       setIsLoading(false)
@@ -77,11 +108,7 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
     
     if (flavorId) {
       try {
-        const reorderedWithNumbers = newSteps.map((step, idx) => ({
-          ...step,
-          stepNumber: idx + 1
-        }))
-        await reorderSteps(flavorId, reorderedWithNumbers)
+        await reorderSteps(flavorId, newSteps)
         toast.success('Steps reordered')
       } catch (error) {
         toast.error('Failed to reorder steps')
@@ -90,18 +117,18 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
   }
 
   const handleSaveFlavor = async () => {
-    if (!name.trim()) {
-      toast.error('Flavor name is required')
+    if (!slug.trim()) {
+      toast.error('Flavor slug is required')
       return
     }
 
     try {
       setIsLoading(true)
       if (flavorId) {
-        await updateFlavor(flavorId, { name, description })
+        await updateFlavor(flavorId, { slug, description })
         toast.success('Flavor updated')
       } else {
-        await createFlavor({ name, description })
+        await createFlavor({ slug, description })
         toast.success('Flavor created')
         onClose()
       }
@@ -127,13 +154,13 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
         <div className="p-4 space-y-4">
           {/* Flavor Details */}
           <div className="space-y-2">
-            <label className="block text-sm font-mono text-primary">Name</label>
+            <label className="block text-sm font-mono text-primary">Slug</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow"
-              placeholder="My Flavor"
+              placeholder="my-flavor"
             />
           </div>
 
@@ -175,7 +202,7 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-mono font-semibold">Step {index + 1}</p>
-                                  <p className="text-xs text-gray-500 truncate">{step.prompt}</p>
+                                  <p className="text-xs text-gray-500 truncate">{step.description}</p>
                                 </div>
                                 <button
                                   onClick={() => handleDeleteStep(step.id)}
@@ -202,7 +229,7 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
                   value={newStepPrompt}
                   onChange={(e) => setNewStepPrompt(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow resize-none"
-                  placeholder="Enter step prompt..."
+                  placeholder="Enter step description..."
                   rows={2}
                 />
                 <button

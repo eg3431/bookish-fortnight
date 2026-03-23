@@ -16,9 +16,17 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<any>(null)
 
+  const hasApiKey = !!process.env.NEXT_PUBLIC_API_KEY
+  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+
   const handleTest = async () => {
     if (!imageUrl.trim()) {
       toast.error('Please enter an image URL')
+      return
+    }
+
+    if (!hasApiKey) {
+      toast.error('API key not configured. Set NEXT_PUBLIC_API_KEY in .env.local')
       return
     }
 
@@ -26,8 +34,9 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
       setIsLoading(true)
       const result = await testFlavor(flavorId, imageUrl)
       setResults(result)
-      toast.success('Captions generated')
+      toast.success('Captions generated successfully!')
     } catch (error: any) {
+      console.error('Test error:', error)
       toast.error(error.message || 'Failed to generate captions')
     } finally {
       setIsLoading(false)
@@ -45,6 +54,21 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Configuration warning */}
+          {!hasApiKey && (
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-400 font-mono">
+                ⚠️ API key not configured. Add NEXT_PUBLIC_API_KEY to .env.local
+              </p>
+            </div>
+          )}
+
+          {/* API Info */}
+          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs">
+            <p className="text-blue-700 dark:text-blue-300 font-mono">
+              API: {apiUrl || 'Not configured'}
+            </p>
+          </div>
           {/* Image URL Input */}
           <div className="space-y-2">
             <label className="block text-sm font-mono text-primary">Image URL</label>
@@ -73,13 +97,17 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
           {/* Test Button */}
           <button
             onClick={handleTest}
-            disabled={isLoading}
-            className="w-full py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 transition flex items-center justify-center space-x-2"
+            disabled={isLoading || !hasApiKey}
+            className="w-full py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center space-x-2"
           >
             {isLoading ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
                 <span>Generating...</span>
+              </>
+            ) : !hasApiKey ? (
+              <>
+                <span>Configure API Key First</span>
               </>
             ) : (
               <>
@@ -93,19 +121,31 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
           {results && (
             <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-600">
               <h3 className="text-sm font-mono font-bold text-primary">&gt; Generated Captions</h3>
-              <div className="space-y-2">
-                {Array.isArray(results.captions) ? (
-                  results.captions.map((caption: string, idx: number) => (
-                    <div
-                      key={idx}
-                      className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700 border-l-2 border-primary"
-                    >
-                      <p className="text-sm">{caption}</p>
-                    </div>
-                  ))
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {results.captions && Array.isArray(results.captions) && results.captions.length > 0 ? (
+                  results.captions.map((caption: string | { text?: string; confidence?: number }, idx: number) => {
+                    const captionText = typeof caption === 'string' ? caption : caption.text || JSON.stringify(caption)
+                    const confidence = typeof caption === 'object' && caption.confidence ? ` (${Math.round(caption.confidence * 100)}%)` : ''
+                    return (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-l-4 border-primary"
+                      >
+                        <div className="flex items-start space-x-2">
+                          <span className="text-primary font-mono font-bold text-xs mt-0.5">{idx + 1}.</span>
+                          <div className="flex-1">
+                            <p className="text-sm">{captionText}</p>
+                            {confidence && <p className="text-xs text-gray-500 mt-1">{confidence}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
                 ) : (
-                  <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-                    <p className="text-sm">{JSON.stringify(results.captions)}</p>
+                  <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border-l-4 border-yellow-500">
+                    <p className="text-sm font-mono">
+                      Raw response: {JSON.stringify(results, null, 2)}
+                    </p>
                   </div>
                 )}
               </div>

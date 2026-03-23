@@ -43,7 +43,6 @@ export const Header = () => {
               <div className="hidden md:flex items-center space-x-2 text-sm">
                 <div className="text-right">
                   <p className="font-mono text-primary">{user.email}</p>
-
                 </div>
               </div>
               <button

@@ -39,6 +39,13 @@ export default function DashboardPage() {
     setEditingFlavor(true)
   }
 
+  const handleEditFlavor = (id: number) => {
+    setSelectedFlavorId(id)
+    fetchFlavor(id)
+    setEditingFlavor(true)
+    setShowEditor(true)
+  }
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -66,6 +73,7 @@ export default function DashboardPage() {
               <FlavorList
                 onSelectFlavor={handleSelectFlavor}
                 onCreateNew={handleCreateNew}
+                onEditFlavor={handleEditFlavor}
                 selectedId={selectedFlavorId}
               />
             </div>
@@ -79,7 +87,7 @@ export default function DashboardPage() {
                 <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-white dark:bg-surface-dark">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h1 className="text-3xl font-mono font-bold neon-text">{currentFlavor.name}</h1>
+                      <h1 className="text-3xl font-mono font-bold neon-text">{currentFlavor.slug}</h1>
                       <p className="text-gray-600 dark:text-gray-400 mt-2">{currentFlavor.description}</p>
                     </div>
                     <div className="flex space-x-2">
@@ -115,7 +123,7 @@ export default function DashboardPage() {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <p className="font-mono font-semibold text-primary">Step {idx + 1}</p>
-                              <p className="text-sm mt-1 dark:text-gray-300">{step.prompt}</p>
+                              <p className="text-sm mt-1 dark:text-gray-300">{step.description}</p>
                             </div>
                           </div>
                         </div>

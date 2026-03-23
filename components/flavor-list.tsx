@@ -9,10 +9,11 @@ import toast from 'react-hot-toast'
 interface FlavorListProps {
   onSelectFlavor: (id: number) => void
   onCreateNew: () => void
+  onEditFlavor: (id: number) => void
   selectedId?: number
 }
 
-export const FlavorList = ({ onSelectFlavor, onCreateNew, selectedId }: FlavorListProps) => {
+export const FlavorList = ({ onSelectFlavor, onCreateNew, onEditFlavor, selectedId }: FlavorListProps) => {
   const { flavors, isLoading, fetchFlavors, deleteFlavor } = useHumorFlavorStore()
 
   useEffect(() => {
@@ -29,6 +30,11 @@ export const FlavorList = ({ onSelectFlavor, onCreateNew, selectedId }: FlavorLi
         toast.error('Failed to delete flavor')
       }
     }
+  }
+
+  const handleEdit = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation()
+    onEditFlavor(id)
   }
 
   return (
@@ -71,16 +77,24 @@ export const FlavorList = ({ onSelectFlavor, onCreateNew, selectedId }: FlavorLi
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="font-mono font-semibold text-sm">{flavor.name}</p>
+                  <p className="font-mono font-semibold text-sm">{flavor.slug}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{flavor.description}</p>
                 </div>
                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition">
-                  <button className="p-1 hover:bg-gray-200 dark:hover:bg-surface-dark rounded">
+                  <button
+                    onClick={(e) => handleEdit(e, flavor.id)}
+                    className="p-1 hover:bg-blue-500 hover:bg-opacity-20 rounded text-blue-500"
+                    title="Edit flavor"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button className="p-1 hover:bg-gray-200 dark:hover:bg-surface-dark rounded" title="Test flavor">
                     <Play className="w-4 h-4" />
                   </button>
                   <button
                     onClick={(e) => handleDelete(e, flavor.id)}
                     className="p-1 hover:bg-red-500 hover:bg-opacity-20 rounded text-red-500"
+                    title="Delete flavor"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

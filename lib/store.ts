@@ -3,19 +3,23 @@ import { apiClient } from './api-client'
 
 interface HumorStep {
   id: number
-  flavorId: number
-  stepNumber: number
-  prompt: string
+  humor_flavor_id: number
+  order: number
+  step_type_id?: number
   description: string
+  created_datetime_utc?: string
+  modified_datetime_utc?: string
 }
 
 interface HumorFlavor {
   id: number
-  name: string
-  description: string
-  steps: HumorStep[]
-  createdAt: string
-  updatedAt: string
+  slug: string
+  description?: string
+  created_by_user_id: string
+  modified_by_user_id: string
+  created_datetime_utc: string
+  modified_datetime_utc: string
+  steps?: HumorStep[]
 }
 
 interface HumorFlavorStore {
@@ -139,7 +143,7 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
         set({
           currentFlavor: {
             ...current,
-            steps: [...current.steps, newStep]
+            steps: [...(current.steps || []), newStep]
           },
           error: null
         })
@@ -161,7 +165,7 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
         set({
           currentFlavor: {
             ...current,
-            steps: current.steps.map(s => s.id === stepId ? updated : s)
+            steps: (current.steps || []).map(s => s.id === stepId ? updated : s)
           },
           error: null
         })
@@ -183,7 +187,7 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
         set({
           currentFlavor: {
             ...current,
-            steps: current.steps.filter(s => s.id !== stepId)
+            steps: (current.steps || []).filter(s => s.id !== stepId)
           },
           error: null
         })
