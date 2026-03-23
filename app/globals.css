@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply transition-colors duration-200;
+}
+
+body {
+  @apply bg-bg-light text-gray-900 dark:bg-bg-dark dark:text-gray-100;
+}
+
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-200 dark:bg-surface-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-600 rounded hover:bg-gray-500 dark:hover:bg-gray-500;
+}
+
+.neon-text {
+  @apply text-primary dark:text-primary font-mono;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.glass-effect {
+  @apply bg-white bg-opacity-10 backdrop-blur-md border border-white border-opacity-10;
+}
+
+.gradient-border {
+  background: linear-gradient(135deg, rgba(0, 255, 0, 0.3), rgba(0, 200, 100, 0.3));
+  padding: 1px;
+}
+
+.input-glow {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark;
+}
