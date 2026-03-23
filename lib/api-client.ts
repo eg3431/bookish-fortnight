@@ -87,10 +87,12 @@ export class SupabaseClient {
         .from('humor_flavor_steps')
         .select('*')
         .eq('humor_flavor_id', flavorId)
-        .order('order', { ascending: true })
 
       if (error) throw error
-      return data || []
+      
+      // Sort by order field in application code
+      const sorted = (data || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+      return sorted
     } catch (error) {
       console.error('Error fetching humor flavor steps:', error)
       throw error
@@ -102,15 +104,17 @@ export class SupabaseClient {
       const { data: session } = await supabase.auth.getSession()
       const userId = session?.user?.id
 
-      // Get the max order for this flavor
-      const { data: steps } = await supabase
+      // Get all steps for this flavor to calculate next order
+      const { data: steps, error: stepsError } = await supabase
         .from('humor_flavor_steps')
-        .select('order')
+        .select('*')
         .eq('humor_flavor_id', flavorId)
-        .order('order', { ascending: false })
-        .limit(1)
 
-      const nextOrder = (steps?.[0]?.order || 0) + 1
+      if (stepsError) throw stepsError
+
+      // Calculate next order
+      const maxOrder = Math.max(...(steps || []).map(s => s.order || 0), 0)
+      const nextOrder = maxOrder + 1
 
       const { data: newStep, error } = await supabase
         .from('humor_flavor_steps')
@@ -212,12 +216,14 @@ export class SupabaseClient {
         .from('humor_flavor_steps')
         .select('*')
         .eq('humor_flavor_id', flavorId)
-        .order('order', { ascending: true })
 
       if (stepsError) throw stepsError
 
+      // Sort steps by order
+      const sortedSteps = (steps || []).sort((a, b) => (a.order || 0) - (b.order || 0))
+
       // Prepare the prompt chain from steps
-      const promptChain = (steps || []).map((step: any) => ({
+      const promptChain = sortedSteps.map((step: any) => ({
         order: step.order,
         description: step.description,
       }))
