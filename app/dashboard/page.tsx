@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation'
 import { useHumorFlavorStore } from '@/lib/store'
 
 export default function DashboardPage() {
-  const { isLoading: authLoading, isAdmin } = useAuth()
+  const { isLoading: authLoading, session } = useAuth()
   const router = useRouter()
   const { currentFlavor, fetchFlavor } = useHumorFlavorStore()
   
@@ -21,11 +21,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      if (!isAdmin) {
+      if (!session) {
         router.push('/')
       }
     }
-  }, [authLoading, isAdmin, router])
+  }, [authLoading, session, router])
 
   const handleSelectFlavor = (id: number) => {
     setSelectedFlavorId(id)
@@ -50,7 +50,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!isAdmin) {
+  if (!session) {
     return null
   }
 

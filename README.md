@@ -116,11 +116,12 @@ The application uses **Google OAuth (SSO)** for authentication via Supabase.
 3. Enable Google provider in your Supabase project
 4. Add your Google OAuth Client ID and Secret to Supabase
 
-**Access Control:**
-- Admin-only access requires one of these roles in the `profiles` table:
+**Access Control (Optional):**
+- Currently, all authenticated users can access the dashboard
+- To enable role-based access control, set `NEXT_PUBLIC_ENABLE_ROLE_CHECK=true` in `.env.local`
+- When enabled, requires one of these roles in the `profiles` table:
   - `is_superadmin = TRUE`
   - `is_matrix_admin = TRUE`
-- Non-admins will be automatically signed out after login
 
 ## API Integration
 
