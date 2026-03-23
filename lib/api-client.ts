@@ -122,6 +122,7 @@ export class SupabaseClient {
           humor_flavor_id: flavorId,
           order_by: nextOrder,
           llm_input_type_id: 1,
+          llm_output_type_id: 1,
           description: data.description || data.prompt || '',
           created_by_user_id: userId,
           modified_by_user_id: userId,
