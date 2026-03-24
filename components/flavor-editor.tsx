@@ -141,7 +141,7 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-surface-dark rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+      <div className="bg-white dark:bg-surface-dark rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] mx-4 flex flex-col">
         <div className="sticky top-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-600 bg-white dark:bg-surface-dark">
           <h2 className="text-lg font-mono font-bold neon-text">
             {flavorId ? '&gt; Edit Flavor' : '&gt; New Flavor'}
@@ -151,7 +151,7 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
           </button>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Flavor Details */}
           <div className="space-y-2">
             <label className="block text-sm font-mono text-primary">Slug</label>
@@ -245,21 +245,22 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
           )}
 
           {/* Save Button */}
-          <div className="flex space-x-2 pt-4 border-t border-gray-200 dark:border-gray-600">
-            <button
-              onClick={onClose}
-              className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition font-mono"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveFlavor}
-              disabled={isLoading}
-              className="flex-1 py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 transition"
-            >
-              {isLoading ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+        </div>
+
+        <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-surface-dark flex space-x-2 p-4">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition font-mono"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSaveFlavor}
+            disabled={isLoading}
+            className="flex-1 py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 transition"
+          >
+            {isLoading ? 'Saving...' : 'Save'}
+          </button>
         </div>
       </div>
     </div>
