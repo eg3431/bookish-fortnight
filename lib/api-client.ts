@@ -19,8 +19,8 @@ export class SupabaseClient {
 
   async createHumorFlavor(data: { slug: string; description?: string }) {
     try {
-      const { data: session } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData?.user?.id
 
       const { data: newFlavor, error } = await supabase
         .from('humor_flavors')
@@ -43,8 +43,8 @@ export class SupabaseClient {
 
   async updateHumorFlavor(id: number, data: any) {
     try {
-      const { data: session } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData?.user?.id
 
       const { data: updated, error } = await supabase
         .from('humor_flavors')
@@ -101,8 +101,8 @@ export class SupabaseClient {
 
   async createHumorFlavorStep(flavorId: number, data: any) {
     try {
-      const { data: session } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData?.user?.id
 
       // Get all steps for this flavor to calculate next order
       const { data: steps, error: stepsError } = await supabase
@@ -145,8 +145,8 @@ export class SupabaseClient {
 
   async updateHumorFlavorStep(flavorId: number, stepId: number, data: any) {
     try {
-      const { data: session } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData?.user?.id
 
       const { data: updated, error } = await supabase
         .from('humor_flavor_steps')
@@ -185,8 +185,8 @@ export class SupabaseClient {
 
   async reorderHumorFlavorSteps(flavorId: number, steps: any[]) {
     try {
-      const { data: session } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const { data: sessionData } = await supabase.auth.getSession()
+      const userId = sessionData?.user?.id
 
       // Update each step with new order_by
       const updates = steps.map((step, index) => ({
