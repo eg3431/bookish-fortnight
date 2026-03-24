@@ -235,17 +235,11 @@ export class SupabaseClient {
         description: step.description,
       }))
 
-      const apiKey = process.env.NEXT_PUBLIC_API_KEY
-      if (!apiKey) {
-        throw new Error('API key is not configured. Please set NEXT_PUBLIC_API_KEY in .env.local')
-      }
-
-      // Call the REST API to generate captions
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/captions/generate`, {
+      // Call our backend API route (which will call the external API with the secret key)
+      const response = await fetch('/api/captions/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           flavorSlug: flavor.slug,
