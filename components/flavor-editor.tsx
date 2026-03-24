@@ -151,100 +151,109 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Flavor Details */}
-          <div className="space-y-2">
-            <label className="block text-sm font-mono text-primary">Slug</label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow"
-              placeholder="my-flavor"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-mono text-primary">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow resize-none"
-              placeholder="Describe what this flavor does..."
-              rows={3}
-            />
-          </div>
-
-          {/* Steps */}
-          {flavorId && (
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Flavor Details */}
             <div className="space-y-2">
-              <h3 className="text-sm font-mono font-bold text-primary">&gt; Steps</h3>
-              
-              {steps.length > 0 ? (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="steps">
-                    {(provided, snapshot) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="space-y-2 p-2 rounded-lg border border-gray-300 dark:border-gray-600"
-                      >
-                        {steps.map((step, index) => (
-                          <Draggable key={step.id} draggableId={`step-${step.id}`} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className="flex items-center space-x-2 p-2 rounded bg-gray-50 dark:bg-gray-700"
-                              >
-                                <div {...provided.dragHandleProps} className="cursor-grab">
-                                  <GripVertical className="w-4 h-4 text-gray-400" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-mono font-semibold">Step {index + 1}</p>
-                                  <p className="text-xs text-gray-500 truncate">{step.description}</p>
-                                </div>
-                                <button
-                                  onClick={() => handleDeleteStep(step.id)}
-                                  className="p-1 hover:bg-red-500 hover:bg-opacity-20 rounded text-red-500"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              ) : (
-                <p className="text-sm text-gray-500 italic">No steps yet</p>
-              )}
-
-              {/* Add Step */}
-              <div className="space-y-2 pt-2">
-                <textarea
-                  value={newStepPrompt}
-                  onChange={(e) => setNewStepPrompt(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow resize-none"
-                  placeholder="Enter step description..."
-                  rows={2}
-                />
-                <button
-                  onClick={handleAddStep}
-                  disabled={isLoading}
-                  className="w-full py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 transition flex items-center justify-center space-x-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Step</span>
-                </button>
-              </div>
+              <label className="block text-sm font-mono text-primary">Slug</label>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow"
+                placeholder="my-flavor"
+              />
             </div>
-          )}
 
-          {/* Save Button */}
+            <div className="space-y-2">
+              <label className="block text-sm font-mono text-primary">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow resize-none"
+                placeholder="Describe what this flavor does..."
+                rows={3}
+              />
+            </div>
+
+            {/* Steps */}
+            {flavorId && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-mono font-bold text-primary">&gt; Steps</h3>
+                
+                {steps.length > 0 ? (
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="steps">
+                      {(provided, snapshot) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="space-y-2 p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+                        >
+                          {steps.map((step, index) => (
+                            <Draggable key={step.id} draggableId={`step-${step.id}`} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  style={provided.draggableProps.style}
+                                  className={`flex items-center space-x-2 p-2 rounded transition ${
+                                    snapshot.isDragging 
+                                      ? 'bg-primary bg-opacity-20 shadow-lg' 
+                                      : 'bg-gray-50 dark:bg-gray-700'
+                                  }`}
+                                >
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="flex-shrink-0 cursor-grab active:cursor-grabbing"
+                                  >
+                                    <GripVertical className="w-4 h-4 text-gray-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-mono font-semibold">Step {index + 1}</p>
+                                    <p className="text-xs text-gray-500 truncate">{step.description}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDeleteStep(step.id)}
+                                    className="flex-shrink-0 p-1 hover:bg-red-500 hover:bg-opacity-20 rounded text-red-500 transition"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">No steps yet</p>
+                )}
+
+                {/* Add Step */}
+                <div className="space-y-2 pt-2">
+                  <textarea
+                    value={newStepPrompt}
+                    onChange={(e) => setNewStepPrompt(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 input-glow resize-none"
+                    placeholder="Enter step description..."
+                    rows={2}
+                  />
+                  <button
+                    onClick={handleAddStep}
+                    disabled={isLoading}
+                    className="w-full py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 transition flex items-center justify-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Step</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="sticky bottom-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-surface-dark flex space-x-2 p-4">
