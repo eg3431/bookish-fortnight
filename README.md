@@ -49,8 +49,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 SUPABASE_SERVICE_KEY=your-service-key
-NEXT_PUBLIC_API_BASE_URL=https://api.almostcrackd.ai
-NEXT_PUBLIC_API_KEY=your-api-key
+API_BASE_URL=https://api.almostcrackd.ai
+API_KEY=your-api-key
 ```
 
 4. Enable Google OAuth in Supabase:

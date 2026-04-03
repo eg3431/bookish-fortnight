@@ -16,17 +16,9 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<any>(null)
 
-  const hasApiKey = !!process.env.NEXT_PUBLIC_API_KEY
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL
-
   const handleTest = async () => {
     if (!imageUrl.trim()) {
       toast.error('Please enter an image URL')
-      return
-    }
-
-    if (!hasApiKey) {
-      toast.error('API key not configured. Set NEXT_PUBLIC_API_KEY in .env.local')
       return
     }
 
@@ -54,19 +46,10 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Configuration warning */}
-          {!hasApiKey && (
-            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-700 dark:text-red-400 font-mono">
-                ⚠️ API key not configured. Add NEXT_PUBLIC_API_KEY to .env.local
-              </p>
-            </div>
-          )}
-
           {/* API Info */}
           <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-xs">
             <p className="text-blue-700 dark:text-blue-300 font-mono">
-              API: {apiUrl || 'Not configured'}
+              Caption generation is configured server-side for security.
             </p>
           </div>
           {/* Image URL Input */}
