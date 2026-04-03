@@ -80,17 +80,13 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
           {/* Test Button */}
           <button
             onClick={handleTest}
-            disabled={isLoading || !hasApiKey}
+            disabled={isLoading}
             className="w-full py-2 rounded-lg bg-primary text-bg-dark font-mono font-bold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center space-x-2"
           >
             {isLoading ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
                 <span>Generating...</span>
-              </>
-            ) : !hasApiKey ? (
-              <>
-                <span>Configure API Key First</span>
               </>
             ) : (
               <>
