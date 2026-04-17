@@ -34,6 +34,7 @@ interface HumorFlavorStore {
   createFlavor: (data: any) => Promise<void>
   updateFlavor: (id: number, data: any) => Promise<void>
   deleteFlavor: (id: number) => Promise<void>
+  duplicateFlavor: (id: number, newSlug: string) => Promise<void>
 
   // Step actions
   createStep: (flavorId: number, data: any) => Promise<void>
@@ -124,6 +125,48 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
       set({ 
         flavors: get().flavors.filter(f => f.id !== id),
         currentFlavor: get().currentFlavor?.id === id ? null : get().currentFlavor,
+        error: null 
+      })
+    } catch (error: any) {
+      set({ error: error.message })
+      throw error
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  duplicateFlavor: async (id: number, newSlug: string) => {
+    set({ isLoading: true })
+    try {
+      // Get the flavor to duplicate
+      const flavorToDuplicate = get().flavors.find(f => f.id === id)
+      if (!flavorToDuplicate) throw new Error('Flavor not found')
+
+      // Create new flavor with new slug
+      const newFlavor = await apiClient.createHumorFlavor({
+        slug: newSlug,
+        description: flavorToDuplicate.description || ''
+      })
+
+      // Get steps from original flavor
+      const steps = await apiClient.getHumorFlavorSteps(id)
+
+      // Create steps for new flavor
+      if (steps && steps.length > 0) {
+        for (const step of steps) {
+          await apiClient.createHumorFlavorStep(newFlavor.id, {
+            description: step.description,
+            prompt: step.description
+          })
+        }
+      }
+
+      // Fetch the complete new flavor with steps
+      const fullFlavor = await apiClient.getHumorFlavorSteps(newFlavor.id)
+      const completeNewFlavor = { ...newFlavor, steps: fullFlavor }
+
+      set({ 
+        flavors: [...get().flavors, completeNewFlavor],
         error: null 
       })
     } catch (error: any) {
