@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: 'Manage humor flavors and generate captions',
 }
 
+// Don't prerender - this app uses client-side auth and context
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({
   children,
 }: {
