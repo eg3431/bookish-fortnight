@@ -1,4 +1,8 @@
-import { supabase } from './supabase'
+import { supabase, cachedUserId, cachedAccessToken } from './supabase'
+
+function getUserId(): string | undefined {
+  return cachedUserId
+}
 
 export class SupabaseClient {
   // Humor Flavor operations
@@ -19,8 +23,7 @@ export class SupabaseClient {
 
   async createHumorFlavor(data: { slug: string; description?: string }) {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const userId = getUserId()
 
       const { data: newFlavor, error } = await supabase
         .from('humor_flavors')
@@ -43,8 +46,7 @@ export class SupabaseClient {
 
   async updateHumorFlavor(id: number, data: any) {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+      const userId = getUserId()
 
       const { data: updated, error } = await supabase
         .from('humor_flavors')
@@ -100,166 +102,137 @@ export class SupabaseClient {
   }
 
   async createHumorFlavorStep(flavorId: number, data: any) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+    const token = cachedAccessToken
+    if (!token) throw new Error('Not authenticated')
 
-      // Get all steps for this flavor to calculate next order
-      const { data: steps, error: stepsError } = await supabase
-        .from('humor_flavor_steps')
-        .select('*')
-        .eq('humor_flavor_id', flavorId)
+    const response = await fetch('/api/steps', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ flavorId, ...data }),
+    })
 
-      if (stepsError) throw stepsError
-
-      // Calculate next order_by
-      const maxOrder = Math.max(...(steps || []).map(s => s.order_by || 0), 0)
-      const nextOrder = maxOrder + 1
-
-      const { data: newStep, error } = await supabase
-        .from('humor_flavor_steps')
-        .insert({
-          humor_flavor_id: flavorId,
-          order_by: nextOrder,
-          llm_input_type_id: 1,
-          llm_output_type_id: 1,
-          llm_model_id: 1,
-          humor_flavor_step_type_id: 1,
-          llm_temperature: 0.7,
-          llm_system_prompt: 'You are a helpful assistant.',
-          llm_user_prompt: data.description || data.prompt || '',
-          description: data.description || data.prompt || '',
-          created_by_user_id: userId,
-          modified_by_user_id: userId,
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-      return newStep
-    } catch (error) {
-      console.error('Error creating humor flavor step:', error)
-      throw error
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || `HTTP ${response.status}`)
     }
+
+    return response.json()
   }
 
   async updateHumorFlavorStep(flavorId: number, stepId: number, data: any) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+    const token = cachedAccessToken
+    if (!token) throw new Error('Not authenticated')
 
-      const { data: updated, error } = await supabase
-        .from('humor_flavor_steps')
-        .update({
-          description: data.description || data.prompt,
-          modified_by_user_id: userId,
-          modified_datetime_utc: new Date().toISOString(),
-        })
-        .eq('id', stepId)
-        .eq('humor_flavor_id', flavorId)
-        .select()
-        .single()
-
-      if (error) throw error
-      return updated
-    } catch (error) {
-      console.error('Error updating humor flavor step:', error)
-      throw error
+    const response = await fetch('/api/steps', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ stepId, flavorId, ...data }),
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || `HTTP ${response.status}`)
     }
+    return response.json()
   }
 
   async deleteHumorFlavorStep(flavorId: number, stepId: number) {
-    try {
-      const { error } = await supabase
-        .from('humor_flavor_steps')
-        .delete()
-        .eq('id', stepId)
-        .eq('humor_flavor_id', flavorId)
+    const token = cachedAccessToken
+    if (!token) throw new Error('Not authenticated')
 
-      if (error) throw error
-    } catch (error) {
-      console.error('Error deleting humor flavor step:', error)
-      throw error
+    const response = await fetch('/api/steps', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ stepId, flavorId }),
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || `HTTP ${response.status}`)
     }
   }
 
   async reorderHumorFlavorSteps(flavorId: number, steps: any[]) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const userId = session?.user?.id
+    const token = cachedAccessToken
+    if (!token) throw new Error('Not authenticated')
 
-      // Update each step with new order_by
-      const updates = steps.map((step, index) => ({
-        ...step,
-        order_by: index + 1,
-        modified_by_user_id: userId,
-        modified_datetime_utc: new Date().toISOString(),
-      }))
-
-      const { error } = await supabase
-        .from('humor_flavor_steps')
-        .upsert(updates)
-
-      if (error) throw error
-    } catch (error) {
-      console.error('Error reordering humor flavor steps:', error)
-      throw error
+    const ordered = steps.map((step, index) => ({ id: step.id, order_by: index + 1 }))
+    const response = await fetch('/api/steps', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ steps: ordered }),
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || `HTTP ${response.status}`)
     }
   }
 
   async testHumorFlavor(flavorId: number, imageUrl: string) {
-    try {
-      // Fetch the flavor with its steps
-      const { data: flavor, error: flavorError } = await supabase
-        .from('humor_flavors')
-        .select('*')
-        .eq('id', flavorId)
-        .single()
+    const token = cachedAccessToken
+    if (!token) throw new Error('Not authenticated')
 
-      if (flavorError) throw flavorError
+    const response = await fetch('/api/captions/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ flavorId, imageUrl }),
+    })
 
-      // Fetch the steps for this flavor
-      const { data: steps, error: stepsError } = await supabase
-        .from('humor_flavor_steps')
-        .select('*')
-        .eq('humor_flavor_id', flavorId)
-
-      if (stepsError) throw stepsError
-
-      // Sort steps by order_by
-      const sortedSteps = (steps || []).sort((a, b) => (a.order_by || 0) - (b.order_by || 0))
-
-      // Prepare the prompt chain from steps
-      const promptChain = sortedSteps.map((step: any) => ({
-        order: step.order_by,
-        description: step.description,
-      }))
-
-      // Call our backend API route (which will call the external API with the secret key)
-      const response = await fetch('/api/captions/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          flavorSlug: flavor.slug,
-          flavorDescription: flavor.description,
-          promptChain: promptChain,
-          imageUrl: imageUrl,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`API error: ${response.status} ${response.statusText}. ${errorText}`)
-      }
-
-      const result = await response.json()
-      return result
-    } catch (error) {
-      console.error('Error testing humor flavor:', error)
-      throw error
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || `HTTP ${response.status}`)
     }
+
+    return response.json()
+  }
+
+  // Lookup table fetchers
+  async getLLMInputTypes(): Promise<{ id: number; name: string }[]> {
+    try {
+      const { data } = await supabase.from('llm_input_types').select('*').order('id')
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        name: r.name || r.display_name || r.description ||
+          (r.slug ? r.slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : String(r.id))
+      }))
+    } catch { return [] }
+  }
+
+  async getLLMOutputTypes(): Promise<{ id: number; name: string }[]> {
+    try {
+      const { data } = await supabase.from('llm_output_types').select('*').order('id')
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        name: r.name || r.display_name || r.description ||
+          (r.slug ? r.slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : String(r.id))
+      }))
+    } catch { return [] }
+  }
+
+  async getLLMModels(): Promise<{ id: number; name: string }[]> {
+    try {
+      const { data } = await supabase.from('llm_models').select('*').order('id')
+      return (data || []).map((r: any) => {
+        const label = r.display_name || r.name || String(r.id)
+        const modelId = r.provider_model_id || r.model_id || null
+        return { id: r.id, name: modelId ? `${label} (${modelId})` : label }
+      })
+    } catch { return [] }
+  }
+
+  async getHumorFlavorStepTypes(): Promise<{ id: number; name: string }[]> {
+    try {
+      const { data } = await supabase.from('humor_flavor_step_types').select('*').order('id')
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        name: r.name || r.display_name ||
+          (r.slug ? r.slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : r.description || String(r.id))
+      }))
+    } catch { return [] }
   }
 }
 

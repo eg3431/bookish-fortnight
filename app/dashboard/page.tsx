@@ -8,9 +8,10 @@ import { FlavorTester } from '@/components'
 import { useAuth } from '@/lib/auth-provider'
 import { useRouter } from 'next/navigation'
 import { useHumorFlavorStore } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 
 export default function DashboardPage() {
-  const { isLoading: authLoading, session } = useAuth()
+  const { isLoading: authLoading, session, isAdmin } = useAuth()
   const router = useRouter()
   const { currentFlavor, fetchFlavor } = useHumorFlavorStore()
   
@@ -59,6 +60,30 @@ export default function DashboardPage() {
 
   if (!session) {
     return null
+  }
+
+  // Block non-admin users
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-light dark:bg-bg-dark px-4">
+        <div className="text-center space-y-4 border border-red-400 rounded-lg p-8 bg-white dark:bg-surface-dark max-w-md">
+          <div className="w-12 h-12 bg-red-500 rounded flex items-center justify-center mx-auto">
+            <span className="text-white font-bold text-xl">✕</span>
+          </div>
+          <h2 className="text-xl font-mono font-bold text-red-500">Access Denied</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+            This tool requires superadmin or matrix admin privileges.<br />
+            Your account does not have the required permissions.
+          </p>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 font-mono text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

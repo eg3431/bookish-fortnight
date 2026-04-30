@@ -89,7 +89,7 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
     try {
       const newFlavor = await apiClient.createHumorFlavor(data)
       set({ 
-        flavors: [...get().flavors, newFlavor],
+        flavors: [newFlavor, ...get().flavors],
         error: null 
       })
     } catch (error: any) {
@@ -104,10 +104,13 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
     set({ isLoading: true })
     try {
       const updated = await apiClient.updateHumorFlavor(id, data)
-      const flavors = get().flavors.map(f => f.id === id ? updated : f)
+      const existingSteps = get().currentFlavor?.id === id ? get().currentFlavor?.steps : undefined
+      const flavors = get().flavors.map(f => f.id === id ? { ...updated, steps: f.steps } : f)
       set({ 
         flavors,
-        currentFlavor: get().currentFlavor?.id === id ? updated : get().currentFlavor,
+        currentFlavor: get().currentFlavor?.id === id
+          ? { ...updated, steps: existingSteps }
+          : get().currentFlavor,
         error: null 
       })
     } catch (error: any) {
@@ -151,22 +154,29 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
       // Get steps from original flavor
       const steps = await apiClient.getHumorFlavorSteps(id)
 
-      // Create steps for new flavor
+      // Create steps for new flavor (copy all fields)
       if (steps && steps.length > 0) {
         for (const step of steps) {
           await apiClient.createHumorFlavorStep(newFlavor.id, {
             description: step.description,
-            prompt: step.description
+            llm_input_type_id: step.llm_input_type_id,
+            llm_output_type_id: step.llm_output_type_id,
+            llm_model_id: step.llm_model_id,
+            humor_flavor_step_type_id: step.humor_flavor_step_type_id,
+            llm_temperature: step.llm_temperature,
+            llm_system_prompt: step.llm_system_prompt,
+            llm_user_prompt: step.llm_user_prompt,
           })
         }
       }
 
       // Fetch the complete new flavor with steps
-      const fullFlavor = await apiClient.getHumorFlavorSteps(newFlavor.id)
-      const completeNewFlavor = { ...newFlavor, steps: fullFlavor }
+      const copiedSteps = await apiClient.getHumorFlavorSteps(newFlavor.id)
+      const completeNewFlavor = { ...newFlavor, steps: copiedSteps }
 
+      // Prepend so it appears at the top (matches DB order: newest first)
       set({ 
-        flavors: [...get().flavors, completeNewFlavor],
+        flavors: [completeNewFlavor, ...get().flavors],
         error: null 
       })
     } catch (error: any) {
@@ -178,10 +188,16 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
   },
 
   createStep: async (flavorId: number, data: any) => {
-    set({ isLoading: true })
+    console.log('[createStep] START', { flavorId, data })
     try {
-      const newStep = await apiClient.createHumorFlavorStep(flavorId, data)
       const current = get().currentFlavor
+      const existingSteps = (current?.id === flavorId ? current?.steps : null) || []
+      const nextOrder = existingSteps.length > 0
+        ? Math.max(...existingSteps.map((s: any) => s.order_by || 0)) + 1
+        : 1
+      console.log('[createStep] calling apiClient.createHumorFlavorStep, nextOrder=', nextOrder)
+      const newStep = await apiClient.createHumorFlavorStep(flavorId, { ...data, order_by: nextOrder })
+      console.log('[createStep] INSERT succeeded', newStep)
       if (current && current.id === flavorId) {
         set({
           currentFlavor: {
@@ -191,11 +207,11 @@ export const useHumorFlavorStore = create<HumorFlavorStore>((set, get) => ({
           error: null
         })
       }
+      console.log('[createStep] DONE')
     } catch (error: any) {
+      console.error('[createStep] ERROR', error)
       set({ error: error.message })
       throw error
-    } finally {
-      set({ isLoading: false })
     }
   },
 

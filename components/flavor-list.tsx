@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useHumorFlavorStore } from '@/lib/store'
-import { Plus, Edit, Trash2, Play, Copy } from 'lucide-react'
+import { Plus, Edit, Trash2, Play, Copy, Search, X as XIcon } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 
@@ -82,13 +82,23 @@ const DuplicateModal = ({ isOpen, sourceFlavorSlug, onConfirm, onCancel, isLoadi
 }
 
 export const FlavorList = ({ onSelectFlavor, onCreateNew, onEditFlavor, selectedId }: FlavorListProps) => {
-  const { flavors, isLoading, fetchFlavors, deleteFlavor, duplicateFlavor } = useHumorFlavorStore()
+  const { flavors, fetchFlavors, deleteFlavor, duplicateFlavor } = useHumorFlavorStore()
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
   const [duplicatingFlavorId, setDuplicatingFlavorId] = useState<number | null>(null)
   const [isDuplicating, setIsDuplicating] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [initialLoading, setInitialLoading] = useState(true)
+
+  const filteredFlavors = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return flavors
+    return flavors.filter(
+      (f) => f.slug.toLowerCase().includes(q) || (f.description || '').toLowerCase().includes(q)
+    )
+  }, [flavors, searchQuery])
 
   useEffect(() => {
-    fetchFlavors()
+    fetchFlavors().finally(() => setInitialLoading(false))
   }, [fetchFlavors])
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
@@ -137,7 +147,7 @@ export const FlavorList = ({ onSelectFlavor, onCreateNew, onEditFlavor, selected
   return (
     <>
       <div className="space-y-2">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-mono font-bold neon-text">&gt; Flavors</h2>
           <button
             onClick={onCreateNew}
@@ -148,19 +158,39 @@ export const FlavorList = ({ onSelectFlavor, onCreateNew, onEditFlavor, selected
           </button>
         </div>
 
-        {isLoading ? (
+        {/* Search */}
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search flavors..."
+            className="w-full pl-8 pr-7 py-1.5 text-xs font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {initialLoading ? (
           <div className="space-y-2">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-12 rounded-lg bg-gray-200 dark:bg-surface-dark animate-pulse" />
             ))}
           </div>
-        ) : flavors.length === 0 ? (
+        ) : filteredFlavors.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p className="font-mono text-sm">&gt; no flavors found</p>
+            <p className="font-mono text-sm">&gt; {searchQuery ? 'no matching flavors' : 'no flavors found'}</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {flavors.map((flavor, idx) => (
+            {filteredFlavors.map((flavor, idx) => (
               <motion.button
                 key={flavor.id}
                 onClick={() => onSelectFlavor(flavor.id)}

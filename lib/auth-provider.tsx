@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from './supabase'
+import { supabase, setCachedAuth } from './supabase'
 import { Session } from '@supabase/supabase-js'
 
 interface AuthContextType {
@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any
 
         setSession(session)
+        setCachedAuth(session?.user?.id, session?.access_token ?? undefined)
 
         if (session) {
           try {
@@ -70,6 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session)
+        setCachedAuth(session?.user?.id, session?.access_token ?? undefined)
 
         if (session) {
           try {

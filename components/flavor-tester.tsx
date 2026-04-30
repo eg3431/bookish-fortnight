@@ -12,51 +12,24 @@ interface FlavorTesterProps {
 
 export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
   const { testFlavor } = useHumorFlavorStore()
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
+  const [imageUrl, setImageUrl] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState<any>(null)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
-      return
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be smaller than 5MB')
-      return
-    }
-
-    setImageFile(file)
-
-    // Create preview
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
   const handleTest = async () => {
-    if (!imageFile) {
-      toast.error('Please select an image')
+    const trimmed = imageUrl.trim()
+    if (!trimmed) {
+      toast.error('Please enter an image URL')
       return
     }
-
-    if (!imagePreview) {
-      toast.error('Failed to process image')
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      toast.error('Please enter a valid https:// image URL')
       return
     }
 
     try {
       setIsLoading(true)
-      const result = await testFlavor(flavorId, imagePreview)
+      const result = await testFlavor(flavorId, trimmed)
       setResults(result)
       toast.success('Captions generated successfully!')
     } catch (error: any) {
@@ -84,26 +57,27 @@ export const FlavorTester = ({ flavorId, onClose }: FlavorTesterProps) => {
               Caption generation is configured server-side for security.
             </p>
           </div>
-          {/* Image File Input */}
+          {/* Image URL Input */}
           <div className="space-y-2">
-            <label className="block text-sm font-mono text-primary">Upload Image</label>
+            <label className="block text-sm font-mono text-primary">Image URL</label>
             <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
             />
-            {imageFile && <p className="text-xs text-gray-500">Selected: {imageFile.name}</p>}
           </div>
 
           {/* Image Preview */}
-          {imagePreview && (
+          {imageUrl.startsWith('http') && (
             <div className="space-y-2">
               <label className="block text-sm font-mono text-primary">Preview</label>
               <img
-                src={imagePreview}
+                src={imageUrl}
                 alt="Preview"
                 className="w-full rounded-lg max-h-64 object-cover border border-gray-300 dark:border-gray-600"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             </div>
           )}
