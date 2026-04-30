@@ -204,9 +204,9 @@ export const FlavorList = ({ onSelectFlavor, onCreateNew, onEditFlavor, selected
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="font-mono font-semibold text-sm">{flavor.slug}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{flavor.description}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-mono font-semibold text-sm break-words line-clamp-2">{flavor.slug}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 break-words line-clamp-2">{flavor.description}</p>
                   </div>
                   <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition">
                     <button

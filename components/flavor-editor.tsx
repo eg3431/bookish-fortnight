@@ -341,8 +341,8 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
   }, [currentFlavor?.steps, flavorId])
 
   const handleAddStep = async () => {
-    if (!newStep.userPrompt.trim()) {
-      toast.error('User prompt cannot be empty')
+    if (!newStep.systemPrompt.trim() && !newStep.userPrompt.trim()) {
+      toast.error('At least one of system prompt or user prompt is required')
       return
     }
     if (!flavorId) {
@@ -352,7 +352,7 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
     try {
       setIsAddingStep(true)
       await createStep(flavorId, {
-        description: newStep.userPrompt,
+        description: newStep.description.trim() || newStep.userPrompt.trim() || newStep.systemPrompt.trim().slice(0, 100),
         llm_input_type_id: newStep.inputTypeId,
         llm_output_type_id: newStep.outputTypeId,
         llm_model_id: newStep.modelId,
@@ -401,15 +401,15 @@ export const FlavorEditor = ({ flavorId, onClose }: FlavorEditorProps) => {
   }
 
   const handleSaveStepEdit = async (stepId: number) => {
-    if (!editingStepForm.userPrompt.trim()) {
-      toast.error('User prompt cannot be empty')
+    if (!editingStepForm.systemPrompt.trim() && !editingStepForm.userPrompt.trim()) {
+      toast.error('At least one of system prompt or user prompt is required')
       return
     }
     if (!flavorId) return
     try {
       setIsSavingStep(true)
       await updateStep(flavorId, stepId, {
-        description: editingStepForm.userPrompt,
+        description: editingStepForm.description.trim() || editingStepForm.userPrompt.trim() || editingStepForm.systemPrompt.trim().slice(0, 100),
         llm_input_type_id: editingStepForm.inputTypeId,
         llm_output_type_id: editingStepForm.outputTypeId,
         llm_model_id: editingStepForm.modelId,

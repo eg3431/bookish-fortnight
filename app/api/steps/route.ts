@@ -122,18 +122,15 @@ export async function PUT(request: NextRequest) {
     const { steps } = body as { steps: Array<{ id: number; order_by: number }> }
     if (!steps?.length) return NextResponse.json({ error: 'steps array is required' }, { status: 400 })
 
-    const updates = steps.map((s) => ({
-      id: s.id,
-      order_by: s.order_by,
-      modified_by_user_id: user.id,
-      modified_datetime_utc: new Date().toISOString(),
-    }))
+    const now = new Date().toISOString()
+    for (const s of steps) {
+      const { error } = await serviceClient
+        .from('humor_flavor_steps')
+        .update({ order_by: s.order_by, modified_by_user_id: user.id, modified_datetime_utc: now })
+        .eq('id', s.id)
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
-    const { error } = await serviceClient
-      .from('humor_flavor_steps')
-      .upsert(updates, { onConflict: 'id' })
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message ?? 'Internal error' }, { status: 500 })

@@ -45,8 +45,6 @@ export const Header = () => {
           {session && (
             <nav className="flex items-center space-x-2">
               {navLink('/dashboard', '⚡ Flavors')}
-              {navLink('/admin', '📊 Admin Stats')}
-              {navLink('/rate', '⭐ Rate Captions')}
             </nav>
           )}
         </div>

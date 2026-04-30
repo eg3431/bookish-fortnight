@@ -5,6 +5,7 @@ import { Header } from '@/components'
 import { FlavorList } from '@/components'
 import { FlavorEditor } from '@/components'
 import { FlavorTester } from '@/components'
+import { FlavorCaptions } from '@/components'
 import { useAuth } from '@/lib/auth-provider'
 import { useRouter } from 'next/navigation'
 import { useHumorFlavorStore } from '@/lib/store'
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const [selectedFlavorId, setSelectedFlavorId] = useState<number>()
   const [showEditor, setShowEditor] = useState(false)
   const [showTester, setShowTester] = useState(false)
+  const [showCaptions, setShowCaptions] = useState(false)
   const [editingFlavor, setEditingFlavor] = useState(false)
 
   useEffect(() => {
@@ -91,9 +93,9 @@ export default function DashboardPage() {
       <Header />
 
       <main className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
           {/* Sidebar - Flavor List */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <div className="sticky top-20 border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-surface-dark">
               <FlavorList
                 onSelectFlavor={handleSelectFlavor}
@@ -105,7 +107,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Main Content - Flavor Details */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-5">
             {selectedFlavorId && currentFlavor ? (
               <div className="space-y-6">
                 {/* Flavor Header */}
@@ -124,6 +126,12 @@ export default function DashboardPage() {
                         className="px-4 py-2 rounded-lg bg-blue-500 text-white font-mono hover:bg-blue-600 transition"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => setShowCaptions(true)}
+                        className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 font-mono hover:bg-gray-100 dark:hover:bg-gray-700 transition text-sm"
+                      >
+                        Captions
                       </button>
                       <button
                         onClick={() => setShowTester(true)}
@@ -148,7 +156,7 @@ export default function DashboardPage() {
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <p className="font-mono font-semibold text-primary">Step {idx + 1}</p>
-                              <p className="text-sm mt-1 dark:text-gray-300">{step.description}</p>
+                              <p className="text-sm mt-1 dark:text-gray-300 line-clamp-3 break-words">{step.description}</p>
                             </div>
                           </div>
                         </div>
@@ -193,6 +201,16 @@ export default function DashboardPage() {
         <FlavorTester
           flavorId={selectedFlavorId}
           onClose={() => setShowTester(false)}
+          onViewCaptions={() => { setShowTester(false); setShowCaptions(true) }}
+        />
+      )}
+
+      {showCaptions && selectedFlavorId && currentFlavor && (
+        <FlavorCaptions
+          flavorId={selectedFlavorId}
+          flavorSlug={currentFlavor.slug}
+          flavorDescription={currentFlavor.description}
+          onClose={() => setShowCaptions(false)}
         />
       )}
     </div>

@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
-function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_KEY
-  if (!url || !serviceKey) throw new Error('Supabase service config missing')
-  return createClient(url, serviceKey, { auth: { persistSession: false } })
-}
+const EXTERNAL_API = 'https://api.almostcrackd.ai'
 
 export async function POST(request: NextRequest) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '')
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const serviceClient = getServiceClient()
-    const { data: { user }, error: authError } = await serviceClient.auth.getUser(token)
-    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await request.json()
     const { flavorId, imageUrl } = body
@@ -24,61 +14,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields: flavorId and imageUrl' }, { status: 400 })
     }
 
-    // Fetch flavor + steps server-side (no client session needed)
-    const { data: flavor, error: flavorError } = await serviceClient
-      .from('humor_flavors')
-      .select('*')
-      .eq('id', flavorId)
-      .single()
-    if (flavorError) return NextResponse.json({ error: flavorError.message }, { status: 500 })
-
-    const { data: steps, error: stepsError } = await serviceClient
-      .from('humor_flavor_steps')
-      .select('*')
-      .eq('humor_flavor_id', flavorId)
-      .order('order_by', { ascending: true })
-    if (stepsError) return NextResponse.json({ error: stepsError.message }, { status: 500 })
-
-    const promptChain = (steps || []).map((step: any) => ({
-      order: step.order_by,
-      description: step.description,
-      llm_system_prompt: step.llm_system_prompt,
-      llm_user_prompt: step.llm_user_prompt,
-    }))
-
-    const apiKey = process.env.API_KEY
-    const apiBaseUrl = process.env.API_BASE_URL
-    if (!apiKey || !apiBaseUrl) {
-      return NextResponse.json({ error: 'API configuration is incomplete' }, { status: 500 })
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     }
 
-    const response = await fetch(`${apiBaseUrl}/captions/generate`, {
+    // Step 3: Register the uploaded image URL
+    const registerRes = await fetch(`${EXTERNAL_API}/pipeline/upload-image-from-url`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        flavorSlug: flavor.slug,
-        flavorDescription: flavor.description,
-        promptChain,
-        imageUrl,
-      }),
+      headers,
+      body: JSON.stringify({ imageUrl, isCommonUse: false }),
     })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Caption API error: ${response.status} ${errorText}`)
-      return NextResponse.json({ error: `Caption generation failed: ${response.statusText}` }, { status: response.status })
+    const registerBody = await registerRes.text()
+    console.error('[captions] register status:', registerRes.status, registerBody)
+    if (!registerRes.ok) {
+      return NextResponse.json({ error: `Image registration failed (${registerRes.status}): ${registerBody}` }, { status: registerRes.status })
+    }
+    let registerJson: any
+    try { registerJson = JSON.parse(registerBody) } catch { registerJson = {} }
+    const imageId = registerJson.imageId ?? registerJson.image_id ?? registerJson.id
+    console.error('[captions] imageId:', imageId, '| full register json:', registerJson)
+    if (!imageId) {
+      return NextResponse.json({ error: `Image registration returned no imageId. Response: ${registerBody}` }, { status: 500 })
     }
 
-    const result = await response.json()
+    // Step 4: Generate captions for this flavor
+    const captionsRes = await fetch(`${EXTERNAL_API}/pipeline/generate-captions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ imageId, humorFlavorId: flavorId }),
+    })
+    const captionsBody = await captionsRes.text()
+    console.error('[captions] generate status:', captionsRes.status, captionsBody)
+    if (!captionsRes.ok) {
+      return NextResponse.json({ error: `Caption generation failed (${captionsRes.status}): ${captionsBody}` }, { status: captionsRes.status })
+    }
+
+    let result: any
+    try { result = JSON.parse(captionsBody) } catch { result = { raw: captionsBody } }
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Caption generation error:', error)
+    console.error('[captions] unexpected error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to generate captions' },
       { status: 500 }
     )
   }
 }
+
